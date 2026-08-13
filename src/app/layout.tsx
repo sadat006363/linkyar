@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans';
-import './../styles/globals.css';
-import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { Inter } from 'next/font/google';
+import 'next/font/google';  // این خط را اضافه کنید
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'LinkYar - Smart Link Assistant',
@@ -18,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn(GeistSans.className, "font-sans", geist.variable)}>
+    <html lang="en" className={inter.className}>
       <body>{children}</body>
     </html>
   );
