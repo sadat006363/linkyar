@@ -1,5 +1,3 @@
-// src/app/[username]/page.tsx
-
 import { createClient } from '@/lib/supabase/client';
 
 interface PageProps {
@@ -9,9 +7,6 @@ interface PageProps {
 }
 
 export default async function PublicProfilePage({ params }: PageProps) {
-  // اینجا می‌توانید اطلاعات کاربر را از Supabase دریافت کنید
-  // برای MVP فعلی، یک صفحه‌ی ساده نمایش می‌دهیم
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <div className="max-w-md w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 text-center">
