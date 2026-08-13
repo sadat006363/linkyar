@@ -1,0 +1,16 @@
+{
+  "name": "LinkYar",
+  "short_name": "LinkYar",
+  "description": "The fastest way to manage and share your social links",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/images/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
