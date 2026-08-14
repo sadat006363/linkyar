@@ -395,12 +395,12 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Header Section */}
+      {/* Header Section - بدون LinkYar و Smart Link Assistant */}
       <div className="border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             
-            {/* LEFT SIDE: Avatar + User Name */}
+            {/* LEFT SIDE: Avatar + User Name (بدون LinkYar) */}
             <div className="flex items-center gap-4">
               {/* Avatar - 4x larger (w-24 h-24) */}
               <DropdownMenu>
@@ -475,7 +475,7 @@ export default function DashboardPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* User Name - با استایل گرادیانت زیبا */}
+              {/* User Name - با گرادیانت زیبا (بدون LinkYar) */}
               <div className="hidden sm:block">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
                   {userName}
