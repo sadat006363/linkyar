@@ -395,12 +395,12 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Header Section - NEW DESIGN */}
+      {/* Header Section */}
       <div className="border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             
-            {/* LEFT SIDE: Avatar + Brand */}
+            {/* LEFT SIDE: Avatar + User Name */}
             <div className="flex items-center gap-4">
               {/* Avatar - 4x larger (w-24 h-24) */}
               <DropdownMenu>
@@ -475,13 +475,13 @@ export default function DashboardPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Brand: LinkYar + Smart Link Assistant */}
+              {/* User Name - با استایل گرادیانت زیبا */}
               <div className="hidden sm:block">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  LinkYar
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
+                  {userName}
                 </h1>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                  Smart Link Assistant
+                  {links.length} {links.length === 1 ? 'link' : 'links'} saved
                 </p>
               </div>
             </div>
