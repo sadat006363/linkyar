@@ -6,7 +6,7 @@ export default function HomePage() {
       <div className="max-w-2xl text-center space-y-6">
         <h1 className="text-5xl font-bold gradient-text">LinkYar</h1>
         <p className="text-xl text-muted-foreground">
-          The fastest way to manage and share your social links
+          Voice-Powered Link Assistant
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Link href="/dashboard">
@@ -16,7 +16,7 @@ export default function HomePage() {
           </Link>
         </div>
         <p className="text-xs text-muted-foreground mt-8">
-          💡 No sign-up required. All data is stored locally on your device.
+          💡 No sign-up required. All data is stored securely in the cloud.
         </p>
       </div>
     </main>

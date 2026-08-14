@@ -10,7 +10,7 @@ export default function DashboardLayout({
         <header className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold gradient-text">LinkYar</h1>
-            <p className="text-sm text-muted-foreground">Smart Link Assistant</p>
+            <p className="text-sm text-muted-foreground">Voice-Powered Link Assistant</p>
           </div>
           <div className="text-sm text-muted-foreground">
             <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs">
