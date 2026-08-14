@@ -22,7 +22,10 @@ import {
   Sparkles,
   UserCircle,
   Settings,
-  Camera
+  Camera,
+  Facebook,
+  Music,
+  Pin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +51,9 @@ type LinkType = {
   icon: string;
   is_active: boolean;
   sort_order: number;
+  keywords: string;
+  message: string;
+  isQuickAction: boolean;
 };
 
 type ProfileType = {
@@ -66,17 +72,143 @@ function getUserId(): string {
   return userId;
 }
 
+// ============================================================
+// آیکون‌های پلتفرم‌ها با رنگ‌های متناسب
+// ============================================================
 const platformIcons: { [key: string]: JSX.Element } = {
+  // پیام‌رسان‌ها
   telegram: <MessageCircle className="w-5 h-5 text-blue-500" />,
   whatsapp: <MessageCircle className="w-5 h-5 text-green-500" />,
+  // شبکه‌های اجتماعی
   instagram: <Instagram className="w-5 h-5 text-pink-500" />,
   linkedin: <Linkedin className="w-5 h-5 text-blue-600" />,
-  github: <Github className="w-5 h-5 text-gray-700 dark:text-gray-300" />,
-  youtube: <Youtube className="w-5 h-5 text-red-500" />,
   twitter: <Twitter className="w-5 h-5 text-blue-400" />,
+  facebook: <Facebook className="w-5 h-5 text-blue-700" />,
+  youtube: <Youtube className="w-5 h-5 text-red-500" />,
+  tiktok: <Music className="w-5 h-5 text-black dark:text-white" />,
+  snapchat: <Camera className="w-5 h-5 text-yellow-500" />,
+  reddit: <MessageCircle className="w-5 h-5 text-orange-500" />,
+  pinterest: <Pin className="w-5 h-5 text-red-600" />,
+  // توسعه‌دهندگان
+  github: <Github className="w-5 h-5 text-gray-700 dark:text-gray-300" />,
+  discord: <MessageCircle className="w-5 h-5 text-indigo-500" />,
+  // ایمیل
+  gmail: <Mail className="w-5 h-5 text-red-400" />,
+  outlook: <Mail className="w-5 h-5 text-blue-400" />,
+  // عمومی
   website: <Globe className="w-5 h-5 text-purple-500" />,
-  email: <Mail className="w-5 h-5 text-red-400" />,
   phone: <Phone className="w-5 h-5 text-green-600" />,
+  email: <Mail className="w-5 h-5 text-red-400" />,
+};
+
+// ============================================================
+// کلیدواژه‌های پیش‌فرض بر اساس پلتفرم و زبان
+// ============================================================
+const getDefaultKeywords = (platform: string, lang: string): string => {
+  const map: Record<string, Record<string, string>> = {
+    // پیام‌رسان‌ها
+    telegram: {
+      en: 'telegram, tg, t.me',
+      fa: 'تلگرام, کانال تلگرام, تی‌وی',
+      ar: 'تليجرام, التيليجرام',
+      tr: 'telegram, telgraf',
+    },
+    whatsapp: {
+      en: 'whatsapp, wa, wa.me',
+      fa: 'واتساپ, واتس‌اپ, واتس',
+      ar: 'واتساب, الواتساب',
+      tr: 'whatsapp',
+    },
+    // شبکه‌های اجتماعی
+    instagram: {
+      en: 'instagram, ig, insta',
+      fa: 'اینستاگرام, اینستا',
+      ar: 'إنستغرام, إنستا',
+      tr: 'instagram, insta',
+    },
+    linkedin: {
+      en: 'linkedin, in',
+      fa: 'لینکدین',
+      ar: 'لينكدين',
+      tr: 'linkedin',
+    },
+    twitter: {
+      en: 'twitter, x, tweet',
+      fa: 'توییتر, ایکس',
+      ar: 'تويتر, إكس',
+      tr: 'twitter, x',
+    },
+    facebook: {
+      en: 'facebook, fb, meta',
+      fa: 'فیسبوک, فیس‌بوک',
+      ar: 'فيسبوك, ميتا',
+      tr: 'facebook, fb',
+    },
+    youtube: {
+      en: 'youtube, yt, video',
+      fa: 'یوتیوب, آپارات',
+      ar: 'يوتيوب, فيديو',
+      tr: 'youtube, video',
+    },
+    tiktok: {
+      en: 'tiktok, tt, tok',
+      fa: 'تیک‌تاک, تیک تاک',
+      ar: 'تيك توك',
+      tr: 'tiktok',
+    },
+    snapchat: {
+      en: 'snapchat, snap',
+      fa: 'اسنپ‌چت, اسنپ',
+      ar: 'سناب شات',
+      tr: 'snapchat',
+    },
+    reddit: {
+      en: 'reddit, r/',
+      fa: 'ردیت',
+      ar: 'ريديت',
+      tr: 'reddit',
+    },
+    pinterest: {
+      en: 'pinterest, pin',
+      fa: 'پینترست',
+      ar: 'بينتيريست',
+      tr: 'pinterest',
+    },
+    // توسعه‌دهندگان
+    github: {
+      en: 'github, gh, repo',
+      fa: 'گیت‌هاب, گیت هاب',
+      ar: 'غيت هاب',
+      tr: 'github',
+    },
+    discord: {
+      en: 'discord, dc',
+      fa: 'دیسکورد',
+      ar: 'ديسكورد',
+      tr: 'discord',
+    },
+    // ایمیل
+    gmail: {
+      en: 'gmail, email, mail',
+      fa: 'جیمیل, ایمیل, پست الکترونیک',
+      ar: 'جي ميل, بريد إلكتروني',
+      tr: 'gmail, e-posta',
+    },
+    outlook: {
+      en: 'outlook, hotmail',
+      fa: 'اوت‌لوک, هات‌میل',
+      ar: 'أوت لوك, هوتميل',
+      tr: 'outlook, hotmail',
+    },
+    // عمومی
+    website: {
+      en: 'website, site, web',
+      fa: 'وب‌سایت, سایت',
+      ar: 'موقع إلكتروني',
+      tr: 'web sitesi',
+    },
+  };
+  return map[platform.toLowerCase()]?.[lang] || map[platform.toLowerCase()]?.en || '';
 };
 
 export default function DashboardPage() {
@@ -92,6 +224,13 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarKey, setAvatarKey] = useState<number>(0);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+
+  // بارگذاری زبان از localStorage
+  useEffect(() => {
+    const savedLang = localStorage.getItem('govoicelink_language') || 'en';
+    setSelectedLanguage(savedLang);
+  }, []);
 
   useEffect(() => {
     const id = getUserId();
@@ -105,6 +244,13 @@ export default function DashboardPage() {
     loadProfile(id);
     fetchLinks(id);
   }, []);
+
+  // تغییر زبان
+  const changeLanguage = (lang: string) => {
+    setSelectedLanguage(lang);
+    localStorage.setItem('govoicelink_language', lang);
+    toast.success(`Language changed to ${lang.toUpperCase()}`);
+  };
 
   const loadProfile = async (uid: string) => {
     try {
@@ -194,21 +340,36 @@ export default function DashboardPage() {
   const startVoiceRecognition = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
     recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
     recognition.onresult = (event: any) => {
       const command = event.results[0][0].transcript.toLowerCase();
-      const found = links.find(link =>
-        link.platform.toLowerCase().includes(command) ||
-        link.title.toLowerCase().includes(command)
-      );
+      console.log('🎤 Voice command received:', command);
+      
+      // جستجو در عنوان، پلتفرم و کلیدواژه‌ها
+      const found = links.find(link => {
+        const keywords = link.keywords?.toLowerCase() || '';
+        return link.title.toLowerCase().includes(command) ||
+               link.platform.toLowerCase().includes(command) ||
+               keywords.includes(command);
+      });
+      
       if (found) {
         handleCopy(found.url, found.platform);
-        toast.success(`Voice command: ${found.platform}`);
+        toast.success(`✅ ${found.platform} found and copied!`);
       } else {
-        toast.error('No link found for: ' + command);
+        toast.error('❌ No link found for: ' + command);
       }
     };
+
+    recognition.onerror = (event: any) => {
+      console.error('❌ Voice recognition error:', event.error);
+      toast.error('❌ Voice recognition error. Please try again.');
+    };
+
     recognition.start();
-    toast.info('Listening...');
+    toast.info('🎤 Listening...');
   };
 
   const addLink = async (data: Omit<LinkType, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
@@ -455,6 +616,26 @@ export default function DashboardPage() {
 
                   <DropdownMenuSeparator />
                   
+                  {/* انتخاب زبان */}
+                  <DropdownMenuItem onClick={() => changeLanguage('en')}>
+                    <span className="mr-2">🇬🇧</span>
+                    <span>English</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => changeLanguage('fa')}>
+                    <span className="mr-2">🇮🇷</span>
+                    <span>فارسی</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => changeLanguage('ar')}>
+                    <span className="mr-2">🇸🇦</span>
+                    <span>العربية</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => changeLanguage('tr')}>
+                    <span className="mr-2">🇹🇷</span>
+                    <span>Türkçe</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  
                   <DropdownMenuItem onClick={() => {
                     window.open(`/${userId}`, '_blank');
                   }}>
@@ -479,6 +660,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="text-xs text-muted-foreground mr-2 hidden sm:block">
+                {selectedLanguage === 'en' && '🇬🇧 EN'}
+                {selectedLanguage === 'fa' && '🇮🇷 FA'}
+                {selectedLanguage === 'ar' && '🇸🇦 AR'}
+                {selectedLanguage === 'tr' && '🇹🇷 TR'}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -513,6 +700,28 @@ export default function DashboardPage() {
       />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Quick Actions */}
+        <div className="mb-6">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">⚡ Quick Actions</p>
+          <div className="flex flex-wrap gap-2">
+            {links
+              .filter(link => link.isQuickAction)
+              .slice(0, 6)
+              .map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => handleCopy(link.url, link.platform)}
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 border border-blue-200 dark:border-blue-800 text-sm font-medium text-slate-700 dark:text-slate-300 hover:shadow-md transition-all hover:scale-105"
+                >
+                  {link.icon || '🔗'} {link.title}
+                </button>
+              ))}
+          </div>
+          {links.filter(link => link.isQuickAction).length === 0 && (
+            <p className="text-sm text-muted-foreground">No quick actions yet. Enable "Show in Quick Actions" when adding a link.</p>
+          )}
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
@@ -648,6 +857,9 @@ export default function DashboardPage() {
                 icon: formData.get('icon') as string || '🔗',
                 is_active: true,
                 sort_order: 0,
+                keywords: formData.get('keywords') as string || '',
+                message: formData.get('message') as string || '',
+                isQuickAction: formData.get('isQuickAction') === 'on',
               };
 
               if (editingLink) {
@@ -660,13 +872,42 @@ export default function DashboardPage() {
           >
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Platform</label>
-              <Input
+              <select
                 name="platform"
-                placeholder="e.g. Telegram, WhatsApp..."
                 defaultValue={editingLink?.platform || ''}
-                className="mt-1 border-slate-200 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-500"
+                className="mt-1 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-2 text-sm focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none"
                 required
-              />
+              >
+                <option value="">Select a platform...</option>
+                <optgroup label="Messaging">
+                  <option value="telegram">💬 Telegram</option>
+                  <option value="whatsapp">📱 WhatsApp</option>
+                </optgroup>
+                <optgroup label="Social Media">
+                  <option value="instagram">📸 Instagram</option>
+                  <option value="linkedin">💼 LinkedIn</option>
+                  <option value="twitter">🐦 Twitter / X</option>
+                  <option value="facebook">👍 Facebook</option>
+                  <option value="youtube">▶️ YouTube</option>
+                  <option value="tiktok">🎵 TikTok</option>
+                  <option value="snapchat">👻 Snapchat</option>
+                  <option value="reddit">🤖 Reddit</option>
+                  <option value="pinterest">📌 Pinterest</option>
+                </optgroup>
+                <optgroup label="Developer">
+                  <option value="github">🐙 GitHub</option>
+                  <option value="discord">🎮 Discord</option>
+                </optgroup>
+                <optgroup label="Email">
+                  <option value="gmail">📧 Gmail</option>
+                  <option value="outlook">📨 Outlook</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="website">🌐 Website</option>
+                  <option value="email">📧 Email</option>
+                  <option value="phone">📞 Phone</option>
+                </optgroup>
+              </select>
             </div>
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Title</label>
@@ -697,6 +938,43 @@ export default function DashboardPage() {
                 className="mt-1 border-slate-200 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-500"
               />
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Voice Keywords (comma separated)</label>
+              <Input
+                name="keywords"
+                placeholder="telegram, tg, t.me, تلگرام"
+                defaultValue={editingLink?.keywords || ''}
+                className="mt-1 border-slate-200 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-500"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Keywords in multiple languages for voice recognition. Auto-filled based on platform &amp; language.
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Message (optional)</label>
+              <textarea
+                name="message"
+                placeholder="Your message here..."
+                defaultValue={editingLink?.message || ''}
+                className="mt-1 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-2 text-sm focus:border-blue-400 dark:focus:border-blue-500 focus:outline-none"
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Optional message to send with the link</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isQuickAction"
+                id="isQuickAction"
+                defaultChecked={editingLink?.isQuickAction || false}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="isQuickAction" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Show in Quick Actions
+              </label>
+            </div>
+
             <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20">
               {editingLink ? 'Update Link' : 'Create Link'}
             </Button>
