@@ -204,19 +204,49 @@ export default function DashboardPage() {
     toast.success('Name updated!');
   };
 
-  // آپلود عکس پروفایل (با استفاده از FileReader)
+  // آپلود عکس پروفایل با اعتبارسنجی
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      toast.error('No file selected');
+      return;
+    }
 
+    // ۱. اعتبارسنجی نوع فایل (فقط تصاویر)
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (JPEG, PNG, etc.)');
+      e.target.value = '';
+      return;
+    }
+
+    // ۲. محدودیت حجم (حداکثر ۲ مگابایت)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast.error(`Image size should be less than 2MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      e.target.value = '';
+      return;
+    }
+
+    // ۳. خواندن فایل با FileReader
     const reader = new FileReader();
     reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setUserAvatar(dataUrl);
-      localStorage.setItem('linkyar_user_avatar', dataUrl);
-      toast.success('Profile picture updated!');
+      try {
+        const dataUrl = event.target?.result as string;
+        setUserAvatar(dataUrl);
+        localStorage.setItem('linkyar_user_avatar', dataUrl);
+        toast.success('Profile picture updated!');
+      } catch (error) {
+        toast.error('Failed to save image. Please try again.');
+        console.error('Avatar save error:', error);
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read image file.');
     };
     reader.readAsDataURL(file);
+
+    // ۴. پاک کردن input برای امکان انتخاب مجدد
+    e.target.value = '';
   };
 
   const filteredLinks = links.filter(link =>
@@ -254,7 +284,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Profile Section - NEW */}
+            {/* Profile Section */}
             <div className="flex items-center gap-4">
               {/* Voice & Add Link Buttons */}
               <div className="flex items-center gap-2">
@@ -363,7 +393,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Content - (بدون تغییر) */}
+      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats & Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
