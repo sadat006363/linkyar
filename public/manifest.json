@@ -1,7 +1,9 @@
+
+
 {
-  "name": "LinkYar",
-  "short_name": "LinkYar",
-  "description": "The fastest way to manage and share your social links",
+  "name": "GoVoiceLink",
+  "short_name": "GoVoiceLink",
+  "description": "Voice-Powered Link Assistant",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
