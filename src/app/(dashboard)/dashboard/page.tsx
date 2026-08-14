@@ -278,9 +278,6 @@ export default function DashboardPage() {
     }
   };
 
-  // ============================================================
-  // تابع آپلود عکس با دیباگ کامل
-  // ============================================================
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('🔵🔵🔵 handleAvatarUpload CALLED! 🔵🔵🔵');
     const file = e.target.files?.[0];
@@ -517,17 +514,6 @@ export default function DashboardPage() {
                     <span>Take Photo</span>
                   </DropdownMenuItem>
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      console.log('🔵🔵🔵 INPUT onChange FIRED! 🔵🔵🔵');
-                      handleAvatarUpload(e);
-                    }}
-                  />
-
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={() => {
@@ -549,6 +535,20 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ============================================================
+          HIDDEN FILE INPUT - در سطح اصلی قرار دارد
+          ============================================================ */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          console.log('🔵🔵🔵 INPUT onChange FIRED! 🔵🔵🔵');
+          handleAvatarUpload(e);
+        }}
+      />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -656,7 +656,7 @@ export default function DashboardPage() {
         )}
 
         {/* ============================================================
-            دکمه تست آپلود عکس (به‌صورت برجسته در پایین صفحه)
+            TEST BUTTON
             ============================================================ */}
         <div className="mt-8 p-4 border-2 border-dashed border-blue-400 rounded-xl bg-blue-50/50 dark:bg-blue-950/20">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
