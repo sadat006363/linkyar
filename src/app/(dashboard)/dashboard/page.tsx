@@ -20,10 +20,8 @@ import {
   Phone,
   Mail,
   Sparkles,
-  User,
-  Settings,
-  LogOut,
   UserCircle,
+  Settings,
   Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,6 +48,13 @@ type LinkType = {
   icon: string;
   is_active: boolean;
   sort_order: number;
+};
+
+type ProfileType = {
+  id: string;
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
 };
 
 // تابع برای دریافت یا ایجاد user_id در localStorage
@@ -86,19 +91,50 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('User');
   const [userAvatar, setUserAvatar] = useState<string>('');
+  const [profile, setProfile] = useState<ProfileType | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // بارگذاری شناسه کاربر و لینک‌ها
   useEffect(() => {
     const id = getUserId();
     setUserId(id);
-    // خواندن نام و آواتار از localStorage
-    const savedName = localStorage.getItem('linkyar_user_name');
-    const savedAvatar = localStorage.getItem('linkyar_user_avatar');
-    if (savedName) setUserName(savedName);
-    if (savedAvatar) setUserAvatar(savedAvatar);
+    loadProfile(id);
     fetchLinks(id);
   }, []);
+
+  // بارگذاری پروفایل از Supabase
+  const loadProfile = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', uid)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+        setUserName(data.full_name || 'User');
+        if (data.avatar_url) {
+          setUserAvatar(data.avatar_url);
+        }
+      } else {
+        // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert([{ user_id: uid, full_name: 'User' }]);
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error loading profile:', error);
+    }
+  };
 
   const fetchLinks = async (uid: string) => {
     setLoading(true);
@@ -198,34 +234,36 @@ export default function DashboardPage() {
     toast.success('Link deleted!');
   };
 
-  // به‌روزرسانی نام کاربر
-  const updateUserName = (name: string) => {
+  // به‌روزرسانی نام کاربر (در Supabase)
+  const updateUserName = async (name: string) => {
     setUserName(name);
-    localStorage.setItem('linkyar_user_name', name);
-    toast.success('Name updated!');
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: name })
+      .eq('user_id', userId);
+    if (error) {
+      toast.error('Failed to update name: ' + error.message);
+    } else {
+      toast.success('Name updated!');
+    }
   };
 
-  // آپلود عکس پروفایل با اعتبارسنجی
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('handleAvatarUpload called'); // دیباگ
+  // آپلود عکس در Supabase Storage
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    
     if (!file) {
-      console.log('No file selected');
       toast.error('No file selected');
       return;
     }
 
-    console.log('File selected:', file.name, file.size, file.type);
-
-    // ۱. اعتبارسنجی نوع فایل (فقط تصاویر)
+    // اعتبارسنجی نوع فایل
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file (JPEG, PNG, etc.)');
       e.target.value = '';
       return;
     }
 
-    // ۲. محدودیت حجم (حداکثر ۲ مگابایت)
+    // محدودیت حجم (حداکثر ۲ مگابایت)
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
       toast.error(`Image size should be less than 2MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`);
@@ -233,27 +271,45 @@ export default function DashboardPage() {
       return;
     }
 
-    // ۳. خواندن فایل با FileReader
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const dataUrl = event.target?.result as string;
-        console.log('Image loaded successfully, size:', dataUrl.length);
-        setUserAvatar(dataUrl);
-        localStorage.setItem('linkyar_user_avatar', dataUrl);
-        toast.success('Profile picture updated!');
-      } catch (error) {
-        console.error('Avatar save error:', error);
-        toast.error('Failed to save image. Please try again.');
-      }
-    };
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-      toast.error('Failed to read image file.');
-    };
-    reader.readAsDataURL(file);
+    try {
+      // ۱. آپلود فایل در Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
 
-    // ۴. پاک کردن input برای امکان انتخاب مجدد
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast.error('Failed to upload image: ' + uploadError.message);
+        return;
+      }
+
+      // ۲. دریافت URL عمومی
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // ۳. ذخیره URL در جدول profiles
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', userId);
+
+      if (updateError) {
+        toast.error('Failed to save avatar URL: ' + updateError.message);
+        return;
+      }
+
+      // ۴. به‌روزرسانی state
+      setUserAvatar(publicUrl);
+      toast.success('Profile picture updated!');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred.');
+    }
+
     e.target.value = '';
   };
 
@@ -279,7 +335,6 @@ export default function DashboardPage() {
     return platformIcons[key] || <Link2 className="w-5 h-5 text-gray-400" />;
   };
 
-  // گرفتن حرف اول نام برای آواتار پیش‌فرض
   const getInitials = () => {
     return userName.charAt(0).toUpperCase() || 'U';
   };
@@ -306,7 +361,6 @@ export default function DashboardPage() {
 
             {/* Profile Section */}
             <div className="flex items-center gap-4">
-              {/* Voice & Add Link Buttons */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -365,7 +419,6 @@ export default function DashboardPage() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   
-                  {/* Edit Name */}
                   <DropdownMenuItem onClick={() => {
                     const newName = prompt('Enter your name:', userName);
                     if (newName && newName.trim()) {
@@ -376,19 +429,16 @@ export default function DashboardPage() {
                     <span>Edit Name</span>
                   </DropdownMenuItem>
 
-                  {/* Change Photo - Gallery */}
                   <DropdownMenuItem onClick={() => triggerFileUpload('gallery')}>
                     <Camera className="w-4 h-4 mr-2" />
                     <span>Choose from Gallery</span>
                   </DropdownMenuItem>
 
-                  {/* Change Photo - Camera */}
                   <DropdownMenuItem onClick={() => triggerFileUpload('camera')}>
                     <Camera className="w-4 h-4 mr-2" />
                     <span>Take Photo</span>
                   </DropdownMenuItem>
 
-                  {/* Hidden file input */}
                   <input
                     ref={fileInputRef}
                     type="file"
