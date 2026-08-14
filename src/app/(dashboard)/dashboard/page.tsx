@@ -279,18 +279,13 @@ export default function DashboardPage() {
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🔵🔵🔵 handleAvatarUpload CALLED! 🔵🔵🔵');
     const file = e.target.files?.[0];
     if (!file) {
-      console.log('❌ No file selected');
       toast.error('No file selected');
       return;
     }
 
-    console.log('📁 File selected:', file.name, file.size, file.type);
-
     if (!file.type.startsWith('image/')) {
-      console.log('❌ Invalid file type');
       toast.error('Please select an image file (JPEG, PNG, etc.)');
       e.target.value = '';
       return;
@@ -298,7 +293,6 @@ export default function DashboardPage() {
 
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
-      console.log('❌ File too large:', file.size);
       toast.error(`Image size should be less than 2MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`);
       e.target.value = '';
       return;
@@ -307,12 +301,10 @@ export default function DashboardPage() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
-      console.log('🖼️ Displaying preview');
       setUserAvatar(dataUrl);
       toast.info('Uploading...');
     };
-    reader.onerror = (error) => {
-      console.error('❌ FileReader error:', error);
+    reader.onerror = () => {
       toast.error('Failed to read image file.');
     };
     reader.readAsDataURL(file);
@@ -322,15 +314,11 @@ export default function DashboardPage() {
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      console.log('📤 Uploading to path:', filePath);
-      console.log('👤 Current userId:', userId);
-
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
       if (uploadError) {
-        console.error('❌ Upload error:', uploadError);
         toast.error('Failed to upload image: ' + uploadError.message);
         const savedAvatar = localStorage.getItem('linkyar_user_avatar');
         if (savedAvatar) {
@@ -342,22 +330,16 @@ export default function DashboardPage() {
         return;
       }
 
-      console.log('✅ Upload successful!');
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('🔗 Public URL:', publicUrl);
-      console.log('💾 Updating profile for user_id:', userId);
-
-      const { error: updateError, data: updateData } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('user_id', userId)
-        .select();
+        .eq('user_id', userId);
 
       if (updateError) {
-        console.error('❌ Update error:', updateError);
         toast.error('Failed to save avatar URL: ' + updateError.message);
         const savedAvatar = localStorage.getItem('linkyar_user_avatar');
         if (savedAvatar) {
@@ -369,13 +351,11 @@ export default function DashboardPage() {
         return;
       }
 
-      console.log('✅ Update successful:', updateData);
       setUserAvatar(publicUrl);
       localStorage.setItem('linkyar_user_avatar', publicUrl);
       setAvatarKey(prev => prev + 1);
       toast.success('Profile picture updated!');
     } catch (error) {
-      console.error('💥 Unexpected error:', error);
       toast.error('An unexpected error occurred.');
       const savedAvatar = localStorage.getItem('linkyar_user_avatar');
       if (savedAvatar) {
@@ -389,17 +369,13 @@ export default function DashboardPage() {
   };
 
   const triggerFileUpload = (mode: 'gallery' | 'camera') => {
-    console.log('🔵🔵🔵 triggerFileUpload called! mode:', mode);
     if (fileInputRef.current) {
-      console.log('✅ fileInputRef exists, clicking...');
       if (mode === 'camera') {
         fileInputRef.current.setAttribute('capture', 'environment');
       } else {
         fileInputRef.current.removeAttribute('capture');
       }
       fileInputRef.current.click();
-    } else {
-      console.log('❌ fileInputRef is NULL!');
     }
   };
 
@@ -419,69 +395,36 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* Header Section - NEW DESIGN */}
       <div className="border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  LinkYar
-                </h1>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                  Smart Link Assistant
-                </p>
-              </div>
-            </div>
-
+            
+            {/* LEFT SIDE: Avatar + Brand */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={startVoiceRecognition}
-                  className="gap-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
-                >
-                  <Mic className="w-4 h-4 text-blue-500" />
-                  <span className="hidden sm:inline">Voice</span>
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => { setEditingLink(null); setIsDialogOpen(true); }}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Link
-                </Button>
-              </div>
-
+              {/* Avatar - 4x larger (w-24 h-24) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
-                    <Avatar key={avatarKey} className="w-14 h-14 border-2 border-slate-200 dark:border-slate-700">
+                  <button className="rounded-full hover:ring-4 hover:ring-blue-400/50 transition-all outline-none">
+                    <Avatar key={avatarKey} className="w-24 h-24 border-4 border-slate-200 dark:border-slate-700 shadow-lg">
                       {userAvatar ? (
-                        <AvatarImage src={userAvatar} alt={userName} />
+                        <AvatarImage src={userAvatar} alt={userName} className="object-cover" />
                       ) : (
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-4xl font-bold">
                           {getInitials()}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden sm:block">
-                      {userName}
-                    </span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-14 h-14">
+                      <Avatar className="w-12 h-12">
                         {userAvatar ? (
                           <AvatarImage src={userAvatar} alt={userName} />
                         ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl">
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                             {getInitials()}
                           </AvatarFallback>
                         )}
@@ -531,25 +474,55 @@ export default function DashboardPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Brand: LinkYar + Smart Link Assistant */}
+              <div className="hidden sm:block">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  LinkYar
+                </h1>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                  Smart Link Assistant
+                </p>
+              </div>
             </div>
+
+            {/* RIGHT SIDE: Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={startVoiceRecognition}
+                className="gap-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
+              >
+                <Mic className="w-4 h-4 text-blue-500" />
+                <span className="hidden sm:inline">Voice</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => { setEditingLink(null); setIsDialogOpen(true); }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Link
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ============================================================
-          HIDDEN FILE INPUT - در سطح اصلی قرار دارد
-          ============================================================ */}
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={(e) => {
-          console.log('🔵🔵🔵 INPUT onChange FIRED! 🔵🔵🔵');
           handleAvatarUpload(e);
         }}
       />
 
+      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
@@ -654,31 +627,6 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-
-        {/* ============================================================
-            TEST BUTTON
-            ============================================================ */}
-        <div className="mt-8 p-4 border-2 border-dashed border-blue-400 rounded-xl bg-blue-50/50 dark:bg-blue-950/20">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h4 className="font-semibold text-blue-700 dark:text-blue-300">🧪 Test Avatar Upload</h4>
-              <p className="text-sm text-muted-foreground">
-                Click the button below to open the file picker and test avatar upload.
-                Check the console for debug logs.
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                console.log('🔵🔵🔵 TEST BUTTON CLICKED! 🔵🔵🔵');
-                triggerFileUpload('gallery');
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              Test Upload
-            </Button>
-          </div>
-        </div>
 
         <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-xs text-muted-foreground">
