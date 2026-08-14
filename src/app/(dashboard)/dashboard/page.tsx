@@ -19,13 +19,26 @@ import {
   MessageCircle,
   Phone,
   Mail,
-  Sparkles
+  Sparkles,
+  User,
+  Settings,
+  LogOut,
+  UserCircle,
+  Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 type LinkType = {
@@ -71,11 +84,18 @@ export default function DashboardPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<LinkType | null>(null);
   const [userId, setUserId] = useState<string>('');
+  const [userName, setUserName] = useState<string>('User');
+  const [userAvatar, setUserAvatar] = useState<string>('');
 
   // بارگذاری شناسه کاربر و لینک‌ها
   useEffect(() => {
     const id = getUserId();
     setUserId(id);
+    // خواندن نام و آواتار از localStorage
+    const savedName = localStorage.getItem('linkyar_user_name');
+    const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+    if (savedName) setUserName(savedName);
+    if (savedAvatar) setUserAvatar(savedAvatar);
     fetchLinks(id);
   }, []);
 
@@ -177,6 +197,28 @@ export default function DashboardPage() {
     toast.success('Link deleted!');
   };
 
+  // به‌روزرسانی نام کاربر
+  const updateUserName = (name: string) => {
+    setUserName(name);
+    localStorage.setItem('linkyar_user_name', name);
+    toast.success('Name updated!');
+  };
+
+  // آپلود عکس پروفایل (با استفاده از FileReader)
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setUserAvatar(dataUrl);
+      localStorage.setItem('linkyar_user_avatar', dataUrl);
+      toast.success('Profile picture updated!');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const filteredLinks = links.filter(link =>
     link.title.toLowerCase().includes(search.toLowerCase()) ||
     link.platform.toLowerCase().includes(search.toLowerCase())
@@ -185,6 +227,11 @@ export default function DashboardPage() {
   const getPlatformIcon = (platform: string) => {
     const key = platform.toLowerCase();
     return platformIcons[key] || <Link2 className="w-5 h-5 text-gray-400" />;
+  };
+
+  // گرفتن حرف اول نام برای آواتار پیش‌فرض
+  const getInitials = () => {
+    return userName.charAt(0).toUpperCase() || 'U';
   };
 
   return (
@@ -206,30 +253,117 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={startVoiceRecognition}
-                className="gap-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
-              >
-                <Mic className="w-4 h-4 text-blue-500" />
-                <span className="hidden sm:inline">Voice</span>
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => { setEditingLink(null); setIsDialogOpen(true); }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Link
-              </Button>
+
+            {/* Profile Section - NEW */}
+            <div className="flex items-center gap-4">
+              {/* Voice & Add Link Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startVoiceRecognition}
+                  className="gap-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700"
+                >
+                  <Mic className="w-4 h-4 text-blue-500" />
+                  <span className="hidden sm:inline">Voice</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => { setEditingLink(null); setIsDialogOpen(true); }}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Link
+                </Button>
+              </div>
+
+              {/* Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
+                    <Avatar className="w-10 h-10 border-2 border-slate-200 dark:border-slate-700">
+                      {userAvatar ? (
+                        <AvatarImage src={userAvatar} alt={userName} />
+                      ) : (
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-semibold">
+                          {getInitials()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden sm:block">
+                      {userName}
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        {userAvatar ? (
+                          <AvatarImage src={userAvatar} alt={userName} />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                            {getInitials()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-sm">{userName}</p>
+                        <p className="text-xs text-muted-foreground">Free Plan</p>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {/* Edit Name */}
+                  <DropdownMenuItem onClick={() => {
+                    const newName = prompt('Enter your name:', userName);
+                    if (newName && newName.trim()) {
+                      updateUserName(newName.trim());
+                    }
+                  }}>
+                    <UserCircle className="w-4 h-4 mr-2" />
+                    <span>Edit Name</span>
+                  </DropdownMenuItem>
+
+                  {/* Change Photo */}
+                  <DropdownMenuItem>
+                    <Camera className="w-4 h-4 mr-2" />
+                    <label className="cursor-pointer w-full">
+                      Change Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      />
+                    </label>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={() => {
+                    // باز کردن صفحه عمومی
+                    window.open(`/${userId}`, '_blank');
+                  }}>
+                    <Globe className="w-4 h-4 mr-2" />
+                    <span>Public Profile</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={() => {
+                    toast.info('Settings page coming soon!');
+                  }}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - (بدون تغییر) */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats & Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
