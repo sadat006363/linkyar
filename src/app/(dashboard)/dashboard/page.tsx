@@ -287,8 +287,11 @@ export default function DashboardPage() {
 
   // آپلود عکس پروفایل با نمایش فوری و دیباگ کامل
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🔵 handleAvatarUpload called!'); // اولین لاگ برای تأیید اجرا
+
     const file = e.target.files?.[0];
     if (!file) {
+      console.log('❌ No file selected');
       toast.error('No file selected');
       return;
     }
@@ -297,6 +300,7 @@ export default function DashboardPage() {
 
     // اعتبارسنجی نوع فایل
     if (!file.type.startsWith('image/')) {
+      console.log('❌ Invalid file type');
       toast.error('Please select an image file (JPEG, PNG, etc.)');
       e.target.value = '';
       return;
@@ -305,6 +309,7 @@ export default function DashboardPage() {
     // محدودیت حجم (حداکثر ۲ مگابایت)
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
+      console.log('❌ File too large:', file.size);
       toast.error(`Image size should be less than 2MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`);
       e.target.value = '';
       return;
@@ -317,6 +322,10 @@ export default function DashboardPage() {
       console.log('🖼️ Displaying preview');
       setUserAvatar(dataUrl);
       toast.info('Uploading...');
+    };
+    reader.onerror = (error) => {
+      console.error('❌ FileReader error:', error);
+      toast.error('Failed to read image file.');
     };
     reader.readAsDataURL(file);
 
@@ -342,6 +351,7 @@ export default function DashboardPage() {
         } else {
           setUserAvatar('');
         }
+        e.target.value = '';
         return;
       }
 
@@ -360,7 +370,7 @@ export default function DashboardPage() {
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('user_id', userId)
-        .select(); // برای دیدن نتیجه
+        .select();
 
       if (updateError) {
         console.error('❌ Update error:', updateError);
@@ -371,6 +381,7 @@ export default function DashboardPage() {
         } else {
           setUserAvatar('');
         }
+        e.target.value = '';
         return;
       }
 
