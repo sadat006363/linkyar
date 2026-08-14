@@ -93,6 +93,7 @@ export default function DashboardPage() {
   const [userAvatar, setUserAvatar] = useState<string>('');
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarKey, setAvatarKey] = useState<number>(0); // برای رندر مجدد آواتار
 
   // بارگذاری شناسه کاربر و لینک‌ها
   useEffect(() => {
@@ -116,11 +117,10 @@ export default function DashboardPage() {
         .from('profiles')
         .select('*')
         .eq('user_id', uid)
-        .maybeSingle(); // ← مهم: استفاده از maybeSingle برای جلوگیری از خطای 406
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading profile:', error);
-        // اگر جدول وجود نداشت یا خطای دیگری بود، سعی می‌کنیم جدول را بسازیم
         if (error.code === '42P01') {
           toast.error('Profile table not found. Please run the SQL script.');
         } else {
@@ -136,12 +136,14 @@ export default function DashboardPage() {
           localStorage.setItem('linkyar_user_name', data.full_name);
         }
         if (data.avatar_url) {
+          console.log('Avatar URL loaded:', data.avatar_url);
           setUserAvatar(data.avatar_url);
           localStorage.setItem('linkyar_user_avatar', data.avatar_url);
+          setAvatarKey(prev => prev + 1); // رندر مجدد آواتار
         }
       } else {
         // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
-        const newId = crypto.randomUUID(); // تولید id دستی
+        const newId = crypto.randomUUID();
         const { error: insertError } = await supabase
           .from('profiles')
           .insert([{ 
@@ -155,7 +157,6 @@ export default function DashboardPage() {
           toast.error('Failed to create profile: ' + insertError.message);
         } else {
           toast.success('Profile created!');
-          // بارگذاری مجدد
           loadProfile(uid);
         }
       }
@@ -337,6 +338,8 @@ export default function DashboardPage() {
         .from('avatars')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', publicUrl);
+
       // ۴. ذخیره URL در جدول profiles
       const { error: updateError } = await supabase
         .from('profiles')
@@ -358,6 +361,7 @@ export default function DashboardPage() {
       // ۵. به‌روزرسانی نهایی با URL واقعی
       setUserAvatar(publicUrl);
       localStorage.setItem('linkyar_user_avatar', publicUrl);
+      setAvatarKey(prev => prev + 1); // رندر مجدد آواتار
       toast.success('Profile picture updated!');
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -445,12 +449,13 @@ export default function DashboardPage() {
               {/* Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
-                    <Avatar className="w-10 h-10 border-2 border-slate-200 dark:border-slate-700">
+                  <button className="flex items-center gap-3 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
+                    {/* آواتار بزرگ‌تر: w-14 h-14 (قبلاً w-10 h-10 بود) */}
+                    <Avatar key={avatarKey} className="w-14 h-14 border-2 border-slate-200 dark:border-slate-700">
                       {userAvatar ? (
                         <AvatarImage src={userAvatar} alt={userName} />
                       ) : (
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-semibold">
                           {getInitials()}
                         </AvatarFallback>
                       )}
@@ -463,11 +468,11 @@ export default function DashboardPage() {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
+                      <Avatar className="w-14 h-14">
                         {userAvatar ? (
                           <AvatarImage src={userAvatar} alt={userName} />
                         ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl">
                             {getInitials()}
                           </AvatarFallback>
                         )}
