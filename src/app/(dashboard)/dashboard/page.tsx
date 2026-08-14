@@ -98,6 +98,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const id = getUserId();
     setUserId(id);
+    
+    // خواندن نام و آواتار از localStorage (برای نمایش سریع)
+    const savedName = localStorage.getItem('linkyar_user_name');
+    const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+    if (savedName) setUserName(savedName);
+    if (savedAvatar) setUserAvatar(savedAvatar);
+    
     loadProfile(id);
     fetchLinks(id);
   }, []);
@@ -118,9 +125,13 @@ export default function DashboardPage() {
 
       if (data) {
         setProfile(data);
-        setUserName(data.full_name || 'User');
+        if (data.full_name) {
+          setUserName(data.full_name);
+          localStorage.setItem('linkyar_user_name', data.full_name);
+        }
         if (data.avatar_url) {
           setUserAvatar(data.avatar_url);
+          localStorage.setItem('linkyar_user_avatar', data.avatar_url);
         }
       } else {
         // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
@@ -237,6 +248,7 @@ export default function DashboardPage() {
   // به‌روزرسانی نام کاربر (در Supabase)
   const updateUserName = async (name: string) => {
     setUserName(name);
+    localStorage.setItem('linkyar_user_name', name);
     const { error } = await supabase
       .from('profiles')
       .update({ full_name: name })
@@ -248,7 +260,7 @@ export default function DashboardPage() {
     }
   };
 
-  // آپلود عکس در Supabase Storage
+  // آپلود عکس پروفایل با نمایش فوری
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
@@ -271,8 +283,17 @@ export default function DashboardPage() {
       return;
     }
 
+    // ۱. نمایش فوری عکس (با FileReader)
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setUserAvatar(dataUrl);
+      toast.info('Uploading...');
+    };
+    reader.readAsDataURL(file);
+
+    // ۲. آپلود در Supabase Storage (در پس‌زمینه)
     try {
-      // ۱. آپلود فایل در Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
@@ -283,15 +304,22 @@ export default function DashboardPage() {
 
       if (uploadError) {
         toast.error('Failed to upload image: ' + uploadError.message);
+        // برگرداندن عکس قبلی (در صورت وجود)
+        const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+        if (savedAvatar) {
+          setUserAvatar(savedAvatar);
+        } else {
+          setUserAvatar('');
+        }
         return;
       }
 
-      // ۲. دریافت URL عمومی
+      // ۳. دریافت URL عمومی
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // ۳. ذخیره URL در جدول profiles
+      // ۴. ذخیره URL در جدول profiles
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -299,15 +327,30 @@ export default function DashboardPage() {
 
       if (updateError) {
         toast.error('Failed to save avatar URL: ' + updateError.message);
+        // برگرداندن عکس قبلی
+        const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+        if (savedAvatar) {
+          setUserAvatar(savedAvatar);
+        } else {
+          setUserAvatar('');
+        }
         return;
       }
 
-      // ۴. به‌روزرسانی state
+      // ۵. به‌روزرسانی نهایی با URL واقعی
       setUserAvatar(publicUrl);
+      localStorage.setItem('linkyar_user_avatar', publicUrl);
       toast.success('Profile picture updated!');
     } catch (error) {
       console.error('Unexpected error:', error);
       toast.error('An unexpected error occurred.');
+      // برگرداندن عکس قبلی
+      const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+      if (savedAvatar) {
+        setUserAvatar(savedAvatar);
+      } else {
+        setUserAvatar('');
+      }
     }
 
     e.target.value = '';
