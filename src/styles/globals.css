@@ -58,27 +58,71 @@
   }
 }
 
-/* استایل‌های سفارشی پروژه */
+/* ============================================================
+   استایل‌های سفارشی پروژه
+   ============================================================ */
+
+/* گرادیانت متنی */
 .gradient-text {
   @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
 }
 
+/* انیمیشن گرادیانت متحرک برای نام کاربر */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 4s ease-in-out infinite;
+}
+
+/* استایل کارت لینک */
 .link-card-hover {
   @apply transition-all duration-300 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700;
 }
 
+/* استایل دکمه‌های شبکه‌های اجتماعی */
 .social-button {
   @apply flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition-all hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md;
 }
 
+/* استایل کارت پروفایل عمومی */
 .profile-card {
   @apply max-w-md mx-auto p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800;
 }
 
+/* استایل دکمه صوتی */
 .voice-button {
   @apply relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transition-all hover:scale-105 hover:shadow-blue-500/25;
 }
 
 .voice-button-pulse {
   @apply absolute inset-0 rounded-full bg-blue-500/50 animate-ping;
+}
+
+/* استایل اسکرول‌بار سفارشی (اختیاری) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-slate-800 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-b from-blue-500 to-purple-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gradient-to-b from-blue-600 to-purple-600;
 }
