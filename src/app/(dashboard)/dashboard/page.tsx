@@ -116,10 +116,16 @@ export default function DashboardPage() {
         .from('profiles')
         .select('*')
         .eq('user_id', uid)
-        .single();
+        .maybeSingle(); // ← مهم: استفاده از maybeSingle برای جلوگیری از خطای 406
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading profile:', error);
+        // اگر جدول وجود نداشت یا خطای دیگری بود، سعی می‌کنیم جدول را بسازیم
+        if (error.code === '42P01') {
+          toast.error('Profile table not found. Please run the SQL script.');
+        } else {
+          toast.error('Failed to load profile');
+        }
         return;
       }
 
@@ -135,15 +141,27 @@ export default function DashboardPage() {
         }
       } else {
         // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
+        const newId = crypto.randomUUID(); // تولید id دستی
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert([{ user_id: uid, full_name: 'User' }]);
+          .insert([{ 
+            id: newId,
+            user_id: uid, 
+            full_name: 'User' 
+          }]);
+
         if (insertError) {
           console.error('Error creating profile:', insertError);
+          toast.error('Failed to create profile: ' + insertError.message);
+        } else {
+          toast.success('Profile created!');
+          // بارگذاری مجدد
+          loadProfile(uid);
         }
       }
     } catch (error) {
       console.error('Unexpected error loading profile:', error);
+      toast.error('An unexpected error occurred');
     }
   };
 
