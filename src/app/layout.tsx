@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import 'next/font/google';  // این خط را اضافه کنید
+import { Toaster } from 'sonner';  // ← این خط را اضافه کنید
+import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,7 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster position="bottom-right" richColors /> {/* ← این خط را اضافه کنید */}
+      </body>
     </html>
   );
 }
