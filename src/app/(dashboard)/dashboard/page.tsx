@@ -475,14 +475,12 @@ export default function DashboardPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* User Name - با گرادیانت زیبا (بدون LinkYar) */}
+              {/* User Name - با گرادیانت زیبا (بدون لینک‌های ذخیره‌شده) */}
               <div className="hidden sm:block">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
                   {userName}
                 </h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                  {links.length} {links.length === 1 ? 'link' : 'links'} saved
-                </p>
+                {/* عبارت "0 links saved" حذف شد */}
               </div>
             </div>
 
