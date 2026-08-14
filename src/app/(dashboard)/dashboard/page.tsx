@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { 
   Plus, 
@@ -86,6 +86,7 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string>('');
   const [userName, setUserName] = useState<string>('User');
   const [userAvatar, setUserAvatar] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // بارگذاری شناسه کاربر و لینک‌ها
   useEffect(() => {
@@ -206,11 +207,16 @@ export default function DashboardPage() {
 
   // آپلود عکس پروفایل با اعتبارسنجی
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleAvatarUpload called'); // دیباگ
     const file = e.target.files?.[0];
+    
     if (!file) {
+      console.log('No file selected');
       toast.error('No file selected');
       return;
     }
+
+    console.log('File selected:', file.name, file.size, file.type);
 
     // ۱. اعتبارسنجی نوع فایل (فقط تصاویر)
     if (!file.type.startsWith('image/')) {
@@ -232,21 +238,35 @@ export default function DashboardPage() {
     reader.onload = (event) => {
       try {
         const dataUrl = event.target?.result as string;
+        console.log('Image loaded successfully, size:', dataUrl.length);
         setUserAvatar(dataUrl);
         localStorage.setItem('linkyar_user_avatar', dataUrl);
         toast.success('Profile picture updated!');
       } catch (error) {
-        toast.error('Failed to save image. Please try again.');
         console.error('Avatar save error:', error);
+        toast.error('Failed to save image. Please try again.');
       }
     };
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
       toast.error('Failed to read image file.');
     };
     reader.readAsDataURL(file);
 
     // ۴. پاک کردن input برای امکان انتخاب مجدد
     e.target.value = '';
+  };
+
+  // باز کردن File Picker یا دوربین
+  const triggerFileUpload = (mode: 'gallery' | 'camera') => {
+    if (fileInputRef.current) {
+      if (mode === 'camera') {
+        fileInputRef.current.setAttribute('capture', 'environment');
+      } else {
+        fileInputRef.current.removeAttribute('capture');
+      }
+      fileInputRef.current.click();
+    }
   };
 
   const filteredLinks = links.filter(link =>
@@ -356,24 +376,30 @@ export default function DashboardPage() {
                     <span>Edit Name</span>
                   </DropdownMenuItem>
 
-                  {/* Change Photo */}
-                  <DropdownMenuItem>
+                  {/* Change Photo - Gallery */}
+                  <DropdownMenuItem onClick={() => triggerFileUpload('gallery')}>
                     <Camera className="w-4 h-4 mr-2" />
-                    <label className="cursor-pointer w-full">
-                      Change Photo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarUpload}
-                      />
-                    </label>
+                    <span>Choose from Gallery</span>
                   </DropdownMenuItem>
+
+                  {/* Change Photo - Camera */}
+                  <DropdownMenuItem onClick={() => triggerFileUpload('camera')}>
+                    <Camera className="w-4 h-4 mr-2" />
+                    <span>Take Photo</span>
+                  </DropdownMenuItem>
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
 
                   <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={() => {
-                    // باز کردن صفحه عمومی
                     window.open(`/${userId}`, '_blank');
                   }}>
                     <Globe className="w-4 h-4 mr-2" />
