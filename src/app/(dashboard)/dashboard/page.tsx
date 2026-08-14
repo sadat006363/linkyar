@@ -113,6 +113,7 @@ export default function DashboardPage() {
   // بارگذاری پروفایل از Supabase
   const loadProfile = async (uid: string) => {
     try {
+      console.log('🔄 Loading profile for user_id:', uid);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -120,7 +121,7 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading profile:', error);
+        console.error('❌ Error loading profile:', error);
         if (error.code === '42P01') {
           toast.error('Profile table not found. Please run the SQL script.');
         } else {
@@ -130,18 +131,22 @@ export default function DashboardPage() {
       }
 
       if (data) {
+        console.log('✅ Profile loaded:', data);
         setProfile(data);
         if (data.full_name) {
           setUserName(data.full_name);
           localStorage.setItem('linkyar_user_name', data.full_name);
         }
         if (data.avatar_url) {
-          console.log('Avatar URL loaded:', data.avatar_url);
+          console.log('🖼️ Avatar URL from DB:', data.avatar_url);
           setUserAvatar(data.avatar_url);
           localStorage.setItem('linkyar_user_avatar', data.avatar_url);
-          setAvatarKey(prev => prev + 1); // رندر مجدد آواتار
+          setAvatarKey(prev => prev + 1);
+        } else {
+          console.log('⚠️ No avatar_url in profile');
         }
       } else {
+        console.log('ℹ️ No profile found, creating new one...');
         // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
         const newId = crypto.randomUUID();
         const { error: insertError } = await supabase
@@ -153,15 +158,16 @@ export default function DashboardPage() {
           }]);
 
         if (insertError) {
-          console.error('Error creating profile:', insertError);
+          console.error('❌ Error creating profile:', insertError);
           toast.error('Failed to create profile: ' + insertError.message);
         } else {
+          console.log('✅ Profile created successfully');
           toast.success('Profile created!');
           loadProfile(uid);
         }
       }
     } catch (error) {
-      console.error('Unexpected error loading profile:', error);
+      console.error('💥 Unexpected error loading profile:', error);
       toast.error('An unexpected error occurred');
     }
   };
@@ -279,13 +285,15 @@ export default function DashboardPage() {
     }
   };
 
-  // آپلود عکس پروفایل با نمایش فوری
+  // آپلود عکس پروفایل با نمایش فوری و دیباگ کامل
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       toast.error('No file selected');
       return;
     }
+
+    console.log('📁 File selected:', file.name, file.size, file.type);
 
     // اعتبارسنجی نوع فایل
     if (!file.type.startsWith('image/')) {
@@ -306,6 +314,7 @@ export default function DashboardPage() {
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
+      console.log('🖼️ Displaying preview');
       setUserAvatar(dataUrl);
       toast.info('Uploading...');
     };
@@ -317,13 +326,16 @@ export default function DashboardPage() {
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
+      console.log('📤 Uploading to path:', filePath);
+      console.log('👤 Current userId:', userId);
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
         toast.error('Failed to upload image: ' + uploadError.message);
-        // برگرداندن عکس قبلی (در صورت وجود)
         const savedAvatar = localStorage.getItem('linkyar_user_avatar');
         if (savedAvatar) {
           setUserAvatar(savedAvatar);
@@ -332,23 +344,27 @@ export default function DashboardPage() {
         }
         return;
       }
+
+      console.log('✅ Upload successful!');
 
       // ۳. دریافت URL عمومی
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', publicUrl);
+      console.log('🔗 Public URL:', publicUrl);
 
       // ۴. ذخیره URL در جدول profiles
-      const { error: updateError } = await supabase
+      console.log('💾 Updating profile for user_id:', userId);
+      const { error: updateError, data: updateData } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select(); // برای دیدن نتیجه
 
       if (updateError) {
+        console.error('❌ Update error:', updateError);
         toast.error('Failed to save avatar URL: ' + updateError.message);
-        // برگرداندن عکس قبلی
         const savedAvatar = localStorage.getItem('linkyar_user_avatar');
         if (savedAvatar) {
           setUserAvatar(savedAvatar);
@@ -358,15 +374,16 @@ export default function DashboardPage() {
         return;
       }
 
+      console.log('✅ Update successful:', updateData);
+
       // ۵. به‌روزرسانی نهایی با URL واقعی
       setUserAvatar(publicUrl);
       localStorage.setItem('linkyar_user_avatar', publicUrl);
-      setAvatarKey(prev => prev + 1); // رندر مجدد آواتار
+      setAvatarKey(prev => prev + 1);
       toast.success('Profile picture updated!');
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('💥 Unexpected error:', error);
       toast.error('An unexpected error occurred.');
-      // برگرداندن عکس قبلی
       const savedAvatar = localStorage.getItem('linkyar_user_avatar');
       if (savedAvatar) {
         setUserAvatar(savedAvatar);
@@ -450,7 +467,6 @@ export default function DashboardPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
-                    {/* آواتار بزرگ‌تر: w-14 h-14 (قبلاً w-10 h-10 بود) */}
                     <Avatar key={avatarKey} className="w-14 h-14 border-2 border-slate-200 dark:border-slate-700">
                       {userAvatar ? (
                         <AvatarImage src={userAvatar} alt={userName} />
