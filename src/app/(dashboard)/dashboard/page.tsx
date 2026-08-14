@@ -57,7 +57,6 @@ type ProfileType = {
   avatar_url: string | null;
 };
 
-// تابع برای دریافت یا ایجاد user_id در localStorage
 function getUserId(): string {
   let userId = localStorage.getItem('linkyar_user_id');
   if (!userId) {
@@ -67,7 +66,6 @@ function getUserId(): string {
   return userId;
 }
 
-// آیکون‌های پیش‌فرض برای پلتفرم‌ها
 const platformIcons: { [key: string]: JSX.Element } = {
   telegram: <MessageCircle className="w-5 h-5 text-blue-500" />,
   whatsapp: <MessageCircle className="w-5 h-5 text-green-500" />,
@@ -93,14 +91,12 @@ export default function DashboardPage() {
   const [userAvatar, setUserAvatar] = useState<string>('');
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarKey, setAvatarKey] = useState<number>(0); // برای رندر مجدد آواتار
+  const [avatarKey, setAvatarKey] = useState<number>(0);
 
-  // بارگذاری شناسه کاربر و لینک‌ها
   useEffect(() => {
     const id = getUserId();
     setUserId(id);
     
-    // خواندن نام و آواتار از localStorage (برای نمایش سریع)
     const savedName = localStorage.getItem('linkyar_user_name');
     const savedAvatar = localStorage.getItem('linkyar_user_avatar');
     if (savedName) setUserName(savedName);
@@ -110,7 +106,6 @@ export default function DashboardPage() {
     fetchLinks(id);
   }, []);
 
-  // بارگذاری پروفایل از Supabase
   const loadProfile = async (uid: string) => {
     try {
       console.log('🔄 Loading profile for user_id:', uid);
@@ -147,7 +142,6 @@ export default function DashboardPage() {
         }
       } else {
         console.log('ℹ️ No profile found, creating new one...');
-        // اگر پروفایل وجود نداشت، یک رکورد جدید ایجاد کن
         const newId = crypto.randomUUID();
         const { error: insertError } = await supabase
           .from('profiles')
@@ -270,7 +264,6 @@ export default function DashboardPage() {
     toast.success('Link deleted!');
   };
 
-  // به‌روزرسانی نام کاربر (در Supabase)
   const updateUserName = async (name: string) => {
     setUserName(name);
     localStorage.setItem('linkyar_user_name', name);
@@ -285,10 +278,11 @@ export default function DashboardPage() {
     }
   };
 
-  // آپلود عکس پروفایل با نمایش فوری و دیباگ کامل
+  // ============================================================
+  // تابع آپلود عکس با دیباگ کامل
+  // ============================================================
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🔵 handleAvatarUpload called!'); // اولین لاگ برای تأیید اجرا
-
+    console.log('🔵🔵🔵 handleAvatarUpload CALLED! 🔵🔵🔵');
     const file = e.target.files?.[0];
     if (!file) {
       console.log('❌ No file selected');
@@ -298,7 +292,6 @@ export default function DashboardPage() {
 
     console.log('📁 File selected:', file.name, file.size, file.type);
 
-    // اعتبارسنجی نوع فایل
     if (!file.type.startsWith('image/')) {
       console.log('❌ Invalid file type');
       toast.error('Please select an image file (JPEG, PNG, etc.)');
@@ -306,8 +299,7 @@ export default function DashboardPage() {
       return;
     }
 
-    // محدودیت حجم (حداکثر ۲ مگابایت)
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       console.log('❌ File too large:', file.size);
       toast.error(`Image size should be less than 2MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`);
@@ -315,7 +307,6 @@ export default function DashboardPage() {
       return;
     }
 
-    // ۱. نمایش فوری عکس (با FileReader)
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
@@ -329,7 +320,6 @@ export default function DashboardPage() {
     };
     reader.readAsDataURL(file);
 
-    // ۲. آپلود در Supabase Storage (در پس‌زمینه)
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
@@ -356,16 +346,13 @@ export default function DashboardPage() {
       }
 
       console.log('✅ Upload successful!');
-
-      // ۳. دریافت URL عمومی
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
       console.log('🔗 Public URL:', publicUrl);
-
-      // ۴. ذخیره URL در جدول profiles
       console.log('💾 Updating profile for user_id:', userId);
+
       const { error: updateError, data: updateData } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -386,8 +373,6 @@ export default function DashboardPage() {
       }
 
       console.log('✅ Update successful:', updateData);
-
-      // ۵. به‌روزرسانی نهایی با URL واقعی
       setUserAvatar(publicUrl);
       localStorage.setItem('linkyar_user_avatar', publicUrl);
       setAvatarKey(prev => prev + 1);
@@ -406,15 +391,18 @@ export default function DashboardPage() {
     e.target.value = '';
   };
 
-  // باز کردن File Picker یا دوربین
   const triggerFileUpload = (mode: 'gallery' | 'camera') => {
+    console.log('🔵🔵🔵 triggerFileUpload called! mode:', mode);
     if (fileInputRef.current) {
+      console.log('✅ fileInputRef exists, clicking...');
       if (mode === 'camera') {
         fileInputRef.current.setAttribute('capture', 'environment');
       } else {
         fileInputRef.current.removeAttribute('capture');
       }
       fileInputRef.current.click();
+    } else {
+      console.log('❌ fileInputRef is NULL!');
     }
   };
 
@@ -434,7 +422,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Header Section */}
       <div className="border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
@@ -452,7 +439,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Profile Section */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Button
@@ -474,7 +460,6 @@ export default function DashboardPage() {
                 </Button>
               </div>
 
-              {/* Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 rounded-full hover:ring-2 hover:ring-blue-400/50 transition-all outline-none">
@@ -537,7 +522,10 @@ export default function DashboardPage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleAvatarUpload}
+                    onChange={(e) => {
+                      console.log('🔵🔵🔵 INPUT onChange FIRED! 🔵🔵🔵');
+                      handleAvatarUpload(e);
+                    }}
                   />
 
                   <DropdownMenuSeparator />
@@ -562,9 +550,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Stats & Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
@@ -585,7 +571,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Links Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -670,8 +655,32 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+        {/* ============================================================
+            دکمه تست آپلود عکس (به‌صورت برجسته در پایین صفحه)
+            ============================================================ */}
+        <div className="mt-8 p-4 border-2 border-dashed border-blue-400 rounded-xl bg-blue-50/50 dark:bg-blue-950/20">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h4 className="font-semibold text-blue-700 dark:text-blue-300">🧪 Test Avatar Upload</h4>
+              <p className="text-sm text-muted-foreground">
+                Click the button below to open the file picker and test avatar upload.
+                Check the console for debug logs.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                console.log('🔵🔵🔵 TEST BUTTON CLICKED! 🔵🔵🔵');
+                triggerFileUpload('gallery');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              Test Upload
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-xs text-muted-foreground">
             Built with ❤️ using <span className="font-semibold text-blue-600 dark:text-blue-400">Next.js</span> &{' '}
             <span className="font-semibold text-purple-600 dark:text-purple-400">Supabase</span>
@@ -682,7 +691,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Dialog for Add/Edit */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
