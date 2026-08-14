@@ -58,10 +58,10 @@ type ProfileType = {
 };
 
 function getUserId(): string {
-  let userId = localStorage.getItem('linkyar_user_id');
+  let userId = localStorage.getItem('govoicelink_user_id');
   if (!userId) {
     userId = crypto.randomUUID();
-    localStorage.setItem('linkyar_user_id', userId);
+    localStorage.setItem('govoicelink_user_id', userId);
   }
   return userId;
 }
@@ -97,8 +97,8 @@ export default function DashboardPage() {
     const id = getUserId();
     setUserId(id);
     
-    const savedName = localStorage.getItem('linkyar_user_name');
-    const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+    const savedName = localStorage.getItem('govoicelink_user_name');
+    const savedAvatar = localStorage.getItem('govoicelink_user_avatar');
     if (savedName) setUserName(savedName);
     if (savedAvatar) setUserAvatar(savedAvatar);
     
@@ -130,12 +130,12 @@ export default function DashboardPage() {
         setProfile(data);
         if (data.full_name) {
           setUserName(data.full_name);
-          localStorage.setItem('linkyar_user_name', data.full_name);
+          localStorage.setItem('govoicelink_user_name', data.full_name);
         }
         if (data.avatar_url) {
           console.log('🖼️ Avatar URL from DB:', data.avatar_url);
           setUserAvatar(data.avatar_url);
-          localStorage.setItem('linkyar_user_avatar', data.avatar_url);
+          localStorage.setItem('govoicelink_user_avatar', data.avatar_url);
           setAvatarKey(prev => prev + 1);
         } else {
           console.log('⚠️ No avatar_url in profile');
@@ -266,7 +266,7 @@ export default function DashboardPage() {
 
   const updateUserName = async (name: string) => {
     setUserName(name);
-    localStorage.setItem('linkyar_user_name', name);
+    localStorage.setItem('govoicelink_user_name', name);
     const { error } = await supabase
       .from('profiles')
       .update({ full_name: name })
@@ -320,7 +320,7 @@ export default function DashboardPage() {
 
       if (uploadError) {
         toast.error('Failed to upload image: ' + uploadError.message);
-        const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+        const savedAvatar = localStorage.getItem('govoicelink_user_avatar');
         if (savedAvatar) {
           setUserAvatar(savedAvatar);
         } else {
@@ -341,7 +341,7 @@ export default function DashboardPage() {
 
       if (updateError) {
         toast.error('Failed to save avatar URL: ' + updateError.message);
-        const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+        const savedAvatar = localStorage.getItem('govoicelink_user_avatar');
         if (savedAvatar) {
           setUserAvatar(savedAvatar);
         } else {
@@ -352,12 +352,12 @@ export default function DashboardPage() {
       }
 
       setUserAvatar(publicUrl);
-      localStorage.setItem('linkyar_user_avatar', publicUrl);
+      localStorage.setItem('govoicelink_user_avatar', publicUrl);
       setAvatarKey(prev => prev + 1);
       toast.success('Profile picture updated!');
     } catch (error) {
       toast.error('An unexpected error occurred.');
-      const savedAvatar = localStorage.getItem('linkyar_user_avatar');
+      const savedAvatar = localStorage.getItem('govoicelink_user_avatar');
       if (savedAvatar) {
         setUserAvatar(savedAvatar);
       } else {
@@ -395,14 +395,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Header Section - بدون LinkYar و Smart Link Assistant */}
       <div className="border-b border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
-            
-            {/* LEFT SIDE: Avatar + User Name (بدون LinkYar) */}
             <div className="flex items-center gap-4">
-              {/* Avatar - 4x larger (w-24 h-24) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="rounded-full hover:ring-4 hover:ring-blue-400/50 transition-all outline-none">
@@ -475,16 +471,13 @@ export default function DashboardPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* User Name - با گرادیانت زیبا (بدون لینک‌های ذخیره‌شده) */}
               <div className="hidden sm:block">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
                   {userName}
                 </h1>
-                {/* عبارت "0 links saved" حذف شد */}
               </div>
             </div>
 
-            {/* RIGHT SIDE: Actions */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -509,7 +502,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -520,7 +512,6 @@ export default function DashboardPage() {
         }}
       />
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
@@ -626,13 +617,13 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-xs text-muted-foreground">
             Built with ❤️ using <span className="font-semibold text-blue-600 dark:text-blue-400">Next.js</span> &{' '}
             <span className="font-semibold text-purple-600 dark:text-purple-400">Supabase</span>
           </p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            © 2026 LinkYar — All rights reserved
+            © 2026 GoVoiceLink — All rights reserved
           </p>
         </div>
       </div>

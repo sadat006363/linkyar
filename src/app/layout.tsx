@@ -6,7 +6,7 @@ import '@/styles/globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LinkYar - Voice-Powered Link Assistant',
+  title: 'GoVoiceLink - Voice-Powered Link Assistant',
   description: 'The fastest way to manage and share your social links with voice commands',
   manifest: '/manifest.json',
 };
