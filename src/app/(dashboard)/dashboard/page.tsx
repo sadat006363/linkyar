@@ -848,15 +848,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
-          <p className="text-xs text-muted-foreground">
-            Built with ❤️ using <span className="font-semibold text-blue-600 dark:text-blue-400">Next.js</span> &{' '}
-            <span className="font-semibold text-purple-600 dark:text-purple-400">Supabase</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            © 2026 GoVoiceLink — All rights reserved
-          </p>
-        </div>
+        {/* ============================================================
+            ❌ فوتر حذف شد (قبلاً اینجا بود)
+            ============================================================ */}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
