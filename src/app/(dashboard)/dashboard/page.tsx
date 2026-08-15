@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { ResultCard } from '@/components/ResultCard';
 
 type LinkType = {
   id: string;
@@ -76,10 +77,8 @@ function getUserId(): string {
 // آیکون‌های پلتفرم‌ها با رنگ‌های متناسب
 // ============================================================
 const platformIcons: { [key: string]: JSX.Element } = {
-  // پیام‌رسان‌ها
   telegram: <MessageCircle className="w-5 h-5 text-blue-500" />,
   whatsapp: <MessageCircle className="w-5 h-5 text-green-500" />,
-  // شبکه‌های اجتماعی
   instagram: <Instagram className="w-5 h-5 text-pink-500" />,
   linkedin: <Linkedin className="w-5 h-5 text-blue-600" />,
   twitter: <Twitter className="w-5 h-5 text-blue-400" />,
@@ -89,13 +88,10 @@ const platformIcons: { [key: string]: JSX.Element } = {
   snapchat: <Camera className="w-5 h-5 text-yellow-500" />,
   reddit: <MessageCircle className="w-5 h-5 text-orange-500" />,
   pinterest: <Pin className="w-5 h-5 text-red-600" />,
-  // توسعه‌دهندگان
   github: <Github className="w-5 h-5 text-gray-700 dark:text-gray-300" />,
   discord: <MessageCircle className="w-5 h-5 text-indigo-500" />,
-  // ایمیل
   gmail: <Mail className="w-5 h-5 text-red-400" />,
   outlook: <Mail className="w-5 h-5 text-blue-400" />,
-  // عمومی
   website: <Globe className="w-5 h-5 text-purple-500" />,
   phone: <Phone className="w-5 h-5 text-green-600" />,
   email: <Mail className="w-5 h-5 text-red-400" />,
@@ -106,7 +102,6 @@ const platformIcons: { [key: string]: JSX.Element } = {
 // ============================================================
 const getDefaultKeywords = (platform: string, lang: string): string => {
   const map: Record<string, Record<string, string>> = {
-    // پیام‌رسان‌ها
     telegram: {
       en: 'telegram, tg, t.me',
       fa: 'تلگرام, کانال تلگرام, تی‌وی',
@@ -119,7 +114,6 @@ const getDefaultKeywords = (platform: string, lang: string): string => {
       ar: 'واتساب, الواتساب',
       tr: 'whatsapp',
     },
-    // شبکه‌های اجتماعی
     instagram: {
       en: 'instagram, ig, insta',
       fa: 'اینستاگرام, اینستا',
@@ -174,7 +168,6 @@ const getDefaultKeywords = (platform: string, lang: string): string => {
       ar: 'بينتيريست',
       tr: 'pinterest',
     },
-    // توسعه‌دهندگان
     github: {
       en: 'github, gh, repo',
       fa: 'گیت‌هاب, گیت هاب',
@@ -187,7 +180,6 @@ const getDefaultKeywords = (platform: string, lang: string): string => {
       ar: 'ديسكورد',
       tr: 'discord',
     },
-    // ایمیل
     gmail: {
       en: 'gmail, email, mail',
       fa: 'جیمیل, ایمیل, پست الکترونیک',
@@ -200,7 +192,6 @@ const getDefaultKeywords = (platform: string, lang: string): string => {
       ar: 'أوت لوك, هوتميل',
       tr: 'outlook, hotmail',
     },
-    // عمومی
     website: {
       en: 'website, site, web',
       fa: 'وب‌سایت, سایت',
@@ -225,6 +216,8 @@ export default function DashboardPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarKey, setAvatarKey] = useState<number>(0);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const [showResult, setShowResult] = useState(false);
+  const [resultLink, setResultLink] = useState<LinkType | null>(null);
 
   // بارگذاری زبان از localStorage
   useEffect(() => {
@@ -245,7 +238,6 @@ export default function DashboardPage() {
     fetchLinks(id);
   }, []);
 
-  // تغییر زبان
   const changeLanguage = (lang: string) => {
     setSelectedLanguage(lang);
     localStorage.setItem('govoicelink_language', lang);
@@ -337,6 +329,38 @@ export default function DashboardPage() {
     }
   };
 
+  const copyLinkOnly = (link: LinkType) => {
+    handleCopy(link.url, link.platform);
+    setShowResult(false);
+  };
+
+  const copyMessageWithLink = (link: LinkType) => {
+    const fullText = link.message 
+      ? `${link.message}\n${link.url}`
+      : link.url;
+    navigator.clipboard.writeText(fullText);
+    toast.success('✅ Message + link copied!');
+    setShowResult(false);
+  };
+
+  const shareLink = (link: LinkType) => {
+    const shareData = {
+      title: link.title,
+      text: link.message || link.url,
+      url: link.url,
+    };
+    if (navigator.share) {
+      navigator.share(shareData).catch(() => {});
+    } else {
+      const fullText = link.message 
+        ? `${link.message}\n${link.url}`
+        : link.url;
+      navigator.clipboard.writeText(fullText);
+      toast.success('✅ Shared (copied to clipboard)!');
+    }
+    setShowResult(false);
+  };
+
   const startVoiceRecognition = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
     recognition.lang = 'en-US';
@@ -347,7 +371,6 @@ export default function DashboardPage() {
       const command = event.results[0][0].transcript.toLowerCase();
       console.log('🎤 Voice command received:', command);
       
-      // جستجو در عنوان، پلتفرم و کلیدواژه‌ها
       const found = links.find(link => {
         const keywords = link.keywords?.toLowerCase() || '';
         return link.title.toLowerCase().includes(command) ||
@@ -356,8 +379,8 @@ export default function DashboardPage() {
       });
       
       if (found) {
-        handleCopy(found.url, found.platform);
-        toast.success(`✅ ${found.platform} found and copied!`);
+        setResultLink(found);
+        setShowResult(true);
       } else {
         toast.error('❌ No link found for: ' + command);
       }
@@ -616,7 +639,6 @@ export default function DashboardPage() {
 
                   <DropdownMenuSeparator />
                   
-                  {/* انتخاب زبان */}
                   <DropdownMenuItem onClick={() => changeLanguage('en')}>
                     <span className="mr-2">🇬🇧</span>
                     <span>English</span>
@@ -981,6 +1003,20 @@ export default function DashboardPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Result Card - بعد از تشخیص صدا */}
+      {showResult && resultLink && (
+        <ResultCard
+          title={resultLink.title}
+          platform={resultLink.platform}
+          url={resultLink.url}
+          message={resultLink.message}
+          onCopyLink={() => copyLinkOnly(resultLink)}
+          onCopyMessage={() => copyMessageWithLink(resultLink)}
+          onShare={() => shareLink(resultLink)}
+          onClose={() => setShowResult(false)}
+        />
+      )}
     </div>
   );
 }
