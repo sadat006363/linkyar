@@ -25,7 +25,8 @@ import {
   Camera,
   Facebook,
   Music,
-  Pin
+  Pin,
+  Share2  // ← اضافه شده
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -367,7 +368,50 @@ export default function DashboardPage() {
   };
 
   // ============================================================
-  // تابع تشخیص صدا (برای هر دو حالت)
+  // تابع ارسال دوگانه (لینک مستقیم + صفحه عمومی)
+  // ============================================================
+  const sendDualLink = async (link: LinkType) => {
+    // ۱. ابتدا از ادمین می‌خواهیم فرمان صوتی بدهد
+    toast.info('🎤 Say the platform name (e.g. Telegram)...');
+    
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = async (event: any) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      console.log('🎤 Voice command for dual send:', command);
+
+      // پیدا کردن لینک مرتبط با فرمان
+      const found = links.find(l => {
+        const keywords = l.keywords?.toLowerCase() || '';
+        return l.title.toLowerCase().includes(command) ||
+               l.platform.toLowerCase().includes(command) ||
+               keywords.includes(command);
+      });
+
+      if (found) {
+        const directLink = found.url;
+        const publicProfileLink = `https://govoicelink.vercel.app/${userId}`;
+        const message = `📌 لینک‌های من: ${publicProfileLink}\n\n🔗 لینک مستقیم ${found.platform}: ${directLink}`;
+        
+        await navigator.clipboard.writeText(message);
+        toast.success(`✅ پیام آماده کپی شد! (${found.platform})`);
+      } else {
+        toast.error('❌ No link found for: ' + command);
+      }
+    };
+
+    recognition.onerror = () => {
+      toast.error('❌ Voice recognition error. Please try again.');
+    };
+
+    recognition.start();
+  };
+
+  // ============================================================
+  // تابع تشخیص صدا (برای جستجوی معمولی)
   // ============================================================
   const startVoiceRecognition = () => {
     const recognition = new (window as any).webkitSpeechRecognition();
@@ -895,6 +939,17 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* دکمه‌ی ارسال دوگانه (جدید) - فقط در نسخه‌ی کامل */}
+                          {!isMagicLinkOnly && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-purple-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                              onClick={() => sendDualLink(link)}
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
